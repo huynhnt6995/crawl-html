@@ -31,6 +31,10 @@ function getUrlFromQueue() {
   return urlQueue.shift();
 }
 
+function waitFor(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function getHtml(url, waitKey) {
   if (!browser) {
     browser = await puppeteer.launch({ 
@@ -40,6 +44,7 @@ async function getHtml(url, waitKey) {
   }
 
   const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
   await page.goto(url);
   
   // Wait for the specific element to appear
@@ -52,7 +57,7 @@ async function getHtml(url, waitKey) {
       console.log(`Element "${waitKey}" not found within timeout, proceeding anyway`);
     }
   } else {
-    await page.waitForTimeout(10000);
+    await waitFor(10000);
     console.log('Network is idle');
   }
   
