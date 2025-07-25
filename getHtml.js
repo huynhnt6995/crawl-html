@@ -32,22 +32,24 @@ function getUrlFromQueue() {
 }
 
 function waitFor(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function getHtml(url, waitKey) {
   if (!browser) {
-    browser = await puppeteer.launch({ 
+    browser = await puppeteer.launch({
       headless: false,
-      args: ['--no-sandbox'],
-      userDataDir: '/home/ubuntu/.config/chromium/Default'
+      args: ["--no-sandbox", "--profile-directory=Profile 1"],
+      userDataDir: "/home/ubuntu/.config/chromium",
     });
   }
 
   const page = await browser.newPage();
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  await page.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  );
   await page.goto(url);
-  
+
   // Wait for the specific element to appear
   if (waitKey) {
     try {
@@ -55,13 +57,15 @@ async function getHtml(url, waitKey) {
       await page.waitForSelector(waitKey, { timeout: 30000 }); // 30 second timeout
       console.log(`Element "${waitKey}" found on page`);
     } catch (error) {
-      console.log(`Element "${waitKey}" not found within timeout, proceeding anyway`);
+      console.log(
+        `Element "${waitKey}" not found within timeout, proceeding anyway`
+      );
     }
   } else {
     await waitFor(30000);
-    console.log('Network is idle');
+    console.log("Network is idle");
   }
-  
+
   const html = await page.content();
   await page.close(); // Close page instead of browser to reuse browser instance
   return html;
