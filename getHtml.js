@@ -38,7 +38,7 @@ function waitFor(ms) {
 async function getHtml(url, waitKey) {
   if (!browser) {
     browser = await puppeteer.launch({ 
-      headless: true,
+      headless: false,
       args: ['--no-sandbox']
     });
   }
@@ -57,7 +57,7 @@ async function getHtml(url, waitKey) {
       console.log(`Element "${waitKey}" not found within timeout, proceeding anyway`);
     }
   } else {
-    await waitFor(10000);
+    await waitFor(30000);
     console.log('Network is idle');
   }
   
