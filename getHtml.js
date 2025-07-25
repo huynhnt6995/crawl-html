@@ -33,7 +33,10 @@ function getUrlFromQueue() {
 
 async function getHtml(url, waitKey) {
   if (!browser) {
-    browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({ 
+      headless: true,
+      args: ['--no-sandbox']
+    });
   }
 
   const page = await browser.newPage();
