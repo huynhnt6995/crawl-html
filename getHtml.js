@@ -54,6 +54,7 @@ async function getHtml(url, waitKey) {
     page = newPage;
   }
 
+  console.log("goto", url);
   await page.goto(url);
 
   // Wait for the specific element to appear
@@ -68,6 +69,7 @@ async function getHtml(url, waitKey) {
       );
     }
   } else {
+    console.log("wait for 30 seconds");
     await waitFor(30000);
     console.log("Network is idle");
   }
