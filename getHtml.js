@@ -1,10 +1,9 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-puppeteer.use(StealthPlugin());
+const { connect } = require("puppeteer-real-browser");
 
 let urlQueue = [];
 let running = false;
 let browser = null;
+let page = null;
 
 async function addUrlToQueue(url, callbackUrl, waitKey) {
   urlQueue.push({ url, callbackUrl, waitKey });
@@ -37,17 +36,24 @@ function waitFor(ms) {
 
 async function getHtml(url, waitKey) {
   if (!browser) {
-    browser = await puppeteer.launch({
+    const { browser: newBrowser, page: newPage } = await connect({
       headless: false,
-      args: ["--no-sandbox", "--profile-directory=Profile 1"],
-      userDataDir: "/home/ubuntu/.config/chromium",
+
+      args: [],
+
+      customConfig: {},
+
+      turnstile: true,
+
+      connectOption: {},
+
+      disableXvfb: false,
+      ignoreAllFlags: false,
     });
+    browser = newBrowser;
+    page = newPage;
   }
 
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
-  );
   await page.goto(url);
 
   // Wait for the specific element to appear
