@@ -52,7 +52,7 @@ async function getHtml(url, waitKey) {
       console.log(`Element "${waitKey}" not found within timeout, proceeding anyway`);
     }
   } else {
-    await page.waitForNetworkIdle({ timeout: 10000, idleTime: 500 });
+    await page.waitForTimeout(10000);
     console.log('Network is idle');
   }
   
