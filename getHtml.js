@@ -37,13 +37,13 @@ function waitFor(ms) {
 async function getHtml(url, waitKey) {
   if (!browser) {
     console.log("connecting to browser");
-    const { browser: newBrowser, page: newPage } = await connect({
+    const { browser: newBrowser, page: newPage, } = await connect({
       headless: false,
       // args: [],
       // customConfig: {},
-      // turnstile: true,
+      turnstile: true,
       // connectOption: {},
-      // disableXvfb: false,
+      disableXvfb: true,
       // ignoreAllFlags: false,
     });
     browser = newBrowser;
