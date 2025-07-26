@@ -39,7 +39,12 @@ async function getHtml(url, waitKey) {
   if (!browser) {
     browser = await puppeteer.launch({
       headless: false,
-      args: ["--no-sandbox", "--profile-directory=Profile 1"],
+      args: [
+        "--no-sandbox",
+        "--profile-directory=Profile 1",
+        "--disable-setuid-sandbox",
+        "--use-gl=egl",
+      ],
       userDataDir: "/home/ubuntu/.config/chromium",
     });
   }
