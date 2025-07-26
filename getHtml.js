@@ -38,31 +38,23 @@ function waitFor(ms) {
   async function getHtml(url, waitKey) {
     if (!browser) {
       browser = await puppeteer.launch({
-        headless: false,
+        headless: true, // Changed to true for server environment
         args: [
           "--no-sandbox",
-          "--profile-directory=Profile 1",
           "--disable-setuid-sandbox",
-          "--use-gl=egl",
-          "--disable-blink-features=AutomationControlled",
-          "--disable-web-security",
-          "--disable-features=VizDisplayCompositor",
           "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
           "--no-first-run",
           "--no-zygote",
-          "--disable-gpu",
+          "--single-process",
+          "--disable-extensions",
+          "--disable-plugins",
           "--disable-background-timer-throttling",
           "--disable-backgrounding-occluded-windows",
           "--disable-renderer-backgrounding",
           "--disable-features=TranslateUI",
           "--disable-ipc-flooding-protection",
           "--disable-default-apps",
-          "--disable-extensions",
-          "--disable-plugins",
-          "--disable-images",
-          "--disable-javascript",
-          "--disable-background-networking",
           "--disable-sync",
           "--disable-translate",
           "--hide-scrollbars",
@@ -72,10 +64,15 @@ function waitFor(ms) {
           "--ignore-certificate-errors",
           "--ignore-ssl-errors",
           "--ignore-certificate-errors-spki-list",
-          "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          "--disable-blink-features=AutomationControlled",
+          "--disable-web-security",
+          "--disable-features=VizDisplayCompositor",
+          "--disable-accelerated-2d-canvas",
+          "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         ],
-        userDataDir: "/home/ubuntu/.config/chromium",
+        userDataDir: "/tmp/chromium-user-data", // Changed to temp directory for Chromium
         ignoreDefaultArgs: ['--enable-automation'],
+        executablePath: process.env.CHROMIUM_BIN || '/usr/bin/chromium-browser' || '/usr/bin/chromium', // Chromium path
       });
     }
 
@@ -159,7 +156,7 @@ function waitFor(ms) {
       return toDataURL.apply(this, args);
     };
 
-         // 5. Patch navigator.platform nếu đang chạy Linux
+         // 5. Patch navigator.platform for Linux server
      Object.defineProperty(navigator, "platform", {
        get: () => "Linux x86_64",
      });
