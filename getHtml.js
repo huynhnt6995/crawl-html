@@ -35,24 +35,80 @@ function waitFor(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function getHtml(url, waitKey) {
-  if (!browser) {
-    browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--profile-directory=Profile 1",
-        "--disable-setuid-sandbox",
-        "--use-gl=egl",
-      ],
-      userDataDir: "/home/ubuntu/.config/chromium",
-    });
-  }
+  async function getHtml(url, waitKey) {
+    if (!browser) {
+      browser = await puppeteer.launch({
+        headless: false,
+        args: [
+          "--no-sandbox",
+          "--profile-directory=Profile 1",
+          "--disable-setuid-sandbox",
+          "--use-gl=egl",
+          "--disable-blink-features=AutomationControlled",
+          "--disable-web-security",
+          "--disable-features=VizDisplayCompositor",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--disable-gpu",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+          "--disable-features=TranslateUI",
+          "--disable-ipc-flooding-protection",
+          "--disable-default-apps",
+          "--disable-extensions",
+          "--disable-plugins",
+          "--disable-images",
+          "--disable-javascript",
+          "--disable-background-networking",
+          "--disable-sync",
+          "--disable-translate",
+          "--hide-scrollbars",
+          "--mute-audio",
+          "--no-default-browser-check",
+          "--safebrowsing-disable-auto-update",
+          "--ignore-certificate-errors",
+          "--ignore-ssl-errors",
+          "--ignore-certificate-errors-spki-list",
+          "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ],
+        userDataDir: "/home/ubuntu/.config/chromium",
+        ignoreDefaultArgs: ['--enable-automation'],
+      });
+    }
 
   const page = await browser.newPage();
-  await page.setUserAgent(
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-  );
+  
+  // Remove webdriver property
+  await page.evaluateOnNewDocument(() => {
+    delete navigator.__proto__.webdriver;
+  });
+  
+  // Set realistic viewport
+  await page.setViewport({
+    width: 1920,
+    height: 1080,
+    deviceScaleFactor: 1,
+  });
+  
+  // Set extra headers to look more human
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+  });
 
   await page.evaluateOnNewDocument(() => {
     // 1. Patch WebGL Vendor & Renderer
@@ -103,13 +159,55 @@ async function getHtml(url, waitKey) {
       return toDataURL.apply(this, args);
     };
 
-    // 5. Patch navigator.platform nếu đang chạy Linux
-    Object.defineProperty(navigator, "platform", {
-      get: () => "Linux x86_64",
-    });
-  });
-
-  await page.goto(url);
+         // 5. Patch navigator.platform nếu đang chạy Linux
+     Object.defineProperty(navigator, "platform", {
+       get: () => "Linux x86_64",
+     });
+     
+     // 6. Remove automation indicators
+     Object.defineProperty(navigator, 'webdriver', {
+       get: () => undefined,
+     });
+     
+     // 7. Patch permissions
+     const originalQuery = window.navigator.permissions.query;
+     window.navigator.permissions.query = (parameters) => (
+       parameters.name === 'notifications' ?
+         Promise.resolve({ state: Notification.permission }) :
+         originalQuery(parameters)
+     );
+     
+     // 8. Patch chrome object
+     Object.defineProperty(window, 'chrome', {
+       writable: true,
+       enumerable: true,
+       configurable: true,
+       value: {
+         runtime: {},
+         loadTimes: function() {},
+         csi: function() {},
+         app: {}
+       }
+     });
+     
+     // 9. Patch connection
+     Object.defineProperty(navigator, 'connection', {
+       get: () => ({
+         effectiveType: '4g',
+         rtt: 50,
+         downlink: 10,
+         saveData: false
+       })
+     });
+   });
+ 
+   // Add random delay before navigation to appear more human
+   await waitFor(Math.random() * 2000 + 1000);
+ 
+   await page.goto(url, { 
+     waitUntil: 'domcontentloaded',
+     timeout: 30000 
+   });
 
   // Wait for the specific element to appear
   if (waitKey) {
