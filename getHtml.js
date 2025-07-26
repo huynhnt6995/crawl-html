@@ -123,7 +123,7 @@ async function getHtml(url, waitKey) {
       );
     }
   } else {
-    await waitFor(30000);
+    await waitFor(60000);
     console.log("Network is idle");
   }
 
