@@ -211,6 +211,7 @@ function waitFor(ms) {
 
   // Wait for the specific element to appear
   if (waitKey) {
+    console.log("wait for", waitKey);
     try {
       // Wait for the element to be present in the DOM
       await page.waitForSelector(waitKey, { timeout: 30000 }); // 30 second timeout
@@ -221,6 +222,7 @@ function waitFor(ms) {
       );
     }
   } else {
+    console.log("wait for 60 seconds");
     await waitFor(60000);
     console.log("Network is idle");
   }
