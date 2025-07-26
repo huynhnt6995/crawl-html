@@ -48,6 +48,32 @@ async function getHtml(url, waitKey) {
   await page.setUserAgent(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   );
+
+  await page.evaluateOnNewDocument(() => {
+    // Patch navigator.plugins
+    Object.defineProperty(navigator, "plugins", {
+      get: () => [
+        { name: "Chrome PDF Plugin" },
+        { name: "Chrome PDF Viewer" },
+        { name: "Native Client" },
+      ],
+    });
+
+    // Patch navigator.platform
+    Object.defineProperty(navigator, "platform", {
+      get: () => "Linux x86_64",
+    });
+
+    // Patch Canvas fingerprint
+    const toDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (...args) {
+      const ctx = this.getContext("2d");
+      ctx.fillStyle = "rgb(100,100,100)";
+      ctx.fillRect(0, 0, 10, 10);
+      return toDataURL.apply(this, args);
+    };
+  });
+
   await page.goto(url);
 
   // Wait for the specific element to appear
