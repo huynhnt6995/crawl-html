@@ -55,28 +55,58 @@ async function getHtml(url, waitKey) {
   );
 
   await page.evaluateOnNewDocument(() => {
-    // Patch navigator.plugins
+    // 1. Patch WebGL Vendor & Renderer
+    const getParameter = WebGLRenderingContext.prototype.getParameter;
+    WebGLRenderingContext.prototype.getParameter = function (parameter) {
+      if (parameter === 37445) return "Intel Inc."; // UNMASKED_VENDOR_WEBGL
+      if (parameter === 37446) return "Intel Iris OpenGL"; // UNMASKED_RENDERER_WEBGL
+      return getParameter.call(this, parameter);
+    };
+
+    // 2. Patch navigator.plugins (giả PluginArray thật)
+    const fakePlugin = {
+      description: "Portable Document Format",
+      filename: "internal-pdf-viewer",
+      length: 1,
+      name: "Chrome PDF Plugin",
+      0: {
+        type: "application/pdf",
+        suffixes: "pdf",
+        description: "Portable Document Format",
+      },
+      toString: () => "[object Plugin]",
+    };
+
+    const fakePlugins = {
+      length: 1,
+      0: fakePlugin,
+      namedItem: () => fakePlugin,
+      item: () => fakePlugin,
+      toString: () => "[object PluginArray]",
+    };
+
     Object.defineProperty(navigator, "plugins", {
-      get: () => [
-        { name: "Chrome PDF Plugin" },
-        { name: "Chrome PDF Viewer" },
-        { name: "Native Client" },
-      ],
+      get: () => fakePlugins,
     });
 
-    // Patch navigator.platform
+    // 3. Patch navigator.languages
+    Object.defineProperty(navigator, "languages", {
+      get: () => ["en-US", "en"],
+    });
+
+    // 4. Patch canvas fingerprint
+    const toDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (...args) {
+      const context = this.getContext("2d");
+      context.fillStyle = "rgb(100,100,100)";
+      context.fillRect(0, 0, this.width, this.height);
+      return toDataURL.apply(this, args);
+    };
+
+    // 5. Patch navigator.platform nếu đang chạy Linux
     Object.defineProperty(navigator, "platform", {
       get: () => "Linux x86_64",
     });
-
-    // Patch Canvas fingerprint
-    const toDataURL = HTMLCanvasElement.prototype.toDataURL;
-    HTMLCanvasElement.prototype.toDataURL = function (...args) {
-      const ctx = this.getContext("2d");
-      ctx.fillStyle = "rgb(100,100,100)";
-      ctx.fillRect(0, 0, 10, 10);
-      return toDataURL.apply(this, args);
-    };
   });
 
   await page.goto(url);
